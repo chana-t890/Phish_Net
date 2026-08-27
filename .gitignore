@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Nuxt build & cache
+.nuxt/
+.output/
+dist/
+
+# Environment — never commit real credentials
+.env
+.env.local
+.env.*.local
+
+# Prisma generated client
+prisma/generated/
+
+# Kaggle dataset files (downloaded at runtime by startup plugin)
+data/
+.cache/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+.playwright-mcp/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln

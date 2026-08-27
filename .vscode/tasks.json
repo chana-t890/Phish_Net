@@ -1,0 +1,17 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Regenerate Prisma client",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"node_modules/prisma/build/index.js",
+				"generate",
+				"--schema=prisma/schema.prisma"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		}
+	]
+}

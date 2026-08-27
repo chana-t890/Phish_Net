@@ -1,0 +1,13 @@
+.git
+.gitignore
+.env
+.env.*
+node_modules
+.nuxt
+.output
+dist
+data
+.cache
+playwright-report
+.playwright-mcp
+*.log

@@ -1,0 +1,6 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="icon-wrap">
+<rect width="32" height="32" rx="8" fill="var(--fill-0, #EFF6FF)"/>
+<path id="Vector" d="M16 9C19.866 9 23 12.134 23 16C23 19.866 19.866 23 16 23C12.134 23 9 19.866 9 16C9 12.134 12.134 9 16 9ZM15 16.6182L15.5527 16.8945L18.7529 18.4941L19.2002 17.5996L19.6475 16.7061L17 15.3818V11.2002H15V16.6182Z" stroke="var(--stroke-0, #4F8EF7)" stroke-width="2"/>
+</g>
+</svg>

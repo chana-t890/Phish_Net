@@ -1,0 +1,236 @@
+// https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "./generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  // No url here — it lives in prisma.config.ts
+}
+
+enum Role {
+  ADMIN
+  LEARNER
+}
+
+enum SessionStatus {
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+enum TemplateUseMode {
+  INSPIRATION
+  DIRECT
+}
+
+enum TemplateStatus {
+  DRAFT
+  APPROVED
+  REJECTED
+  ARCHIVED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  role          Role      @default(LEARNER)
+  deactivatedAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions     Session[]
+  assignments  TrainingAssignment[] @relation("AssignedTo")
+  assignedBy   TrainingAssignment[] @relation("AssignedBy")
+  createdEmailTemplates  EmailTemplate[] @relation("TemplateCreatedBy")
+  reviewedEmailTemplates EmailTemplate[] @relation("TemplateReviewedBy")
+
+  @@map("users")
+}
+
+model TrainingAssignment {
+  id         String   @id @default(cuid())
+  userId     String
+  assignedBy String
+  templateId String?
+  deadline   DateTime
+  isPractice Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user     User      @relation("AssignedTo", fields: [userId], references: [id])
+  assigner User      @relation("AssignedBy", fields: [assignedBy], references: [id])
+  template EmailTemplate? @relation(fields: [templateId], references: [id])
+  sessions Session[]
+
+  @@map("training_assignments")
+}
+
+model Session {
+  id            String        @id @default(cuid())
+  userId        String
+  assignmentId  String?
+  status        SessionStatus @default(IN_PROGRESS)
+  score         Float?
+  attemptNumber Int           @default(1)
+  isPractice    Boolean       @default(false)
+  startedAt     DateTime      @default(now())
+  completedAt   DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user          User                @relation(fields: [userId], references: [id])
+  assignment    TrainingAssignment? @relation(fields: [assignmentId], references: [id])
+  sessionEmails SessionEmail[]
+
+  @@map("sessions")
+}
+
+model SessionEmail {
+  id               String    @id @default(cuid())
+  sessionId        String
+  generatedEmailId String
+  submitted        Boolean   @default(false)
+  markedLegitimate Boolean?
+  userPassed       Boolean?
+  reasoningAccepted Boolean  @default(false)
+  submittedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  session          Session          @relation(fields: [sessionId], references: [id])
+  generatedEmail   GeneratedEmail   @relation(fields: [generatedEmailId], references: [id])
+  userFlags        UserFlag[]
+  userExplanations UserExplanation[]
+  aiChatMessages   AiChatMessage[]
+
+  @@map("session_emails")
+}
+
+model EmailTemplate {
+  id            String         @id @default(cuid())
+  sourceDataset String
+  category      String
+  rawSubject    String
+  rawBody       String
+  rawSender     String
+  isPhishing    Boolean
+  attachments   Json?
+  urls          Json?
+  bodyHash      String         @unique
+  usageMode     TemplateUseMode @default(INSPIRATION)
+  status        TemplateStatus  @default(APPROVED)
+  createdById   String?
+  reviewedById  String?
+  reviewedAt    DateTime?
+  adminNotes    String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  generatedEmails GeneratedEmail[]
+  assignments     TrainingAssignment[]
+  expectedFlags   TemplateExpectedFlag[]
+  createdBy       User? @relation("TemplateCreatedBy", fields: [createdById], references: [id])
+  reviewedBy      User? @relation("TemplateReviewedBy", fields: [reviewedById], references: [id])
+
+  @@index([status, usageMode])
+
+  @@map("email_templates")
+}
+
+model GeneratedEmail {
+  id            String   @id @default(cuid())
+  templateId    String?
+  subject       String
+  body          String
+  sender        String
+  isPhishing    Boolean
+  attachments   Json?
+  urls          Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  template       EmailTemplate?   @relation(fields: [templateId], references: [id])
+  sessionEmails  SessionEmail[]
+  expectedFlags  ExpectedFlag[]
+
+  @@map("generated_emails")
+}
+
+model TemplateExpectedFlag {
+  id             String   @id @default(cuid())
+  emailTemplateId String
+  text           String
+  startOffset    Int
+  endOffset      Int
+  category       String
+  zone           String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  emailTemplate EmailTemplate @relation(fields: [emailTemplateId], references: [id], onDelete: Cascade)
+
+  @@index([emailTemplateId])
+  @@map("template_expected_flags")
+}
+
+model ExpectedFlag {
+  id             String   @id @default(cuid())
+  generatedEmailId String
+  text           String
+  startOffset    Int
+  endOffset      Int
+  category       String
+  zone           String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  generatedEmail GeneratedEmail @relation(fields: [generatedEmailId], references: [id])
+
+  @@map("expected_flags")
+}
+
+model UserFlag {
+  id             String   @id @default(cuid())
+  sessionEmailId String
+  flagCategory   String
+  flaggedText    String
+  startOffset    Int?
+  endOffset      Int?
+  zoneType       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  sessionEmail SessionEmail @relation(fields: [sessionEmailId], references: [id])
+
+  @@map("user_flags")
+}
+
+model UserExplanation {
+  id             String   @id @default(cuid())
+  sessionEmailId String
+  text           String
+  aiFeedback     String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  sessionEmail SessionEmail @relation(fields: [sessionEmailId], references: [id])
+
+  @@map("user_explanations")
+}
+
+model AiChatMessage {
+  id             String   @id @default(cuid())
+  sessionEmailId String
+  isChatResponse Boolean
+  content        String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  sessionEmail SessionEmail @relation(fields: [sessionEmailId], references: [id])
+
+  @@map("ai_chat_messages")
+}
